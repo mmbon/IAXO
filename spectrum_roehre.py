@@ -20,7 +20,7 @@ rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 
 kappa = 1.67
-M = 4
+M = 4.002602
 
 
 def calc_height(angle, length): #angle in degree
@@ -40,6 +40,9 @@ def attnuation_coeff(energy):
 def conversion_probability(gamma,L,gay,B):
     return ((gay*B)/2)**2 * 1/(gamma**2/4) * (1+np.exp(- gamma * L)-2*np.exp(-(gamma * L)/2) )
 
+def intensity_decay(I_0,distance,attenuation): #100 is used to convert from cm to m
+    return I_0 * np.exp(-attenuation  * distance)
+
 class IAXO_config:
     def __init__(self, length, angle, pressure, temperature,energy,g_ay,B): #Length in m, angle in degrees, pressure in Pa, temp in K,energy in keV
         self.length = length
@@ -55,7 +58,7 @@ class IAXO_config:
         self.set_areas_of_IAXO()
 
     def set_density(self):
-        self.density = (self.pressure * M)/(con.R * self.temperature)
+        self.density = (self.pressure * M)/(con.R * self.temperature) * 0.001 #calculates the density in kg/m^3
 
     def set_areas_of_IAXO(self):
         self.slices = []
@@ -89,7 +92,16 @@ class IAXO_config:
             self.slices[i].set_attenuation_coeff(self.energy)
 
     def calculate_axion_conversion(self,starting_axions):
+        self.starting_axions = starting_axions
         self.slices[0].calc_converted_photons(starting_axions)
+
+    def get_final_intensity(self):
+        hp = 0
+        for i in range(len(self.slices)):
+            hp += self.slices[i].final_created_photons
+
+        print('Prozentzahl der Photonen:',hp/self.starting_axions)
+        return(hp/self.starting_axions)
 
 class area_of_IAXO:
     def __init__(self,width,current_length,B,g_ay):
@@ -114,14 +126,43 @@ class area_of_IAXO:
     def calc_converted_photons(self,number_axions):
         self.created_photons = number_axions * conversion_probability(self.attenuation_coefficient,self.width,self.g_ay,self.B)
         self.remaining_axions = number_axions - self.created_photons
+        self.final_created_photons = self.calc_transmission(self.created_photons)
 
         if self.next_object is not None:
-            return self.next_object.calc_converted_photons(self.remaining_axions)
+            self.next_object.calc_converted_photons(self.remaining_axions)
 
-tester = IAXO_config(7.5,10,10000,300,511,1,1)
-tester.calculate_axion_conversion(100000)
 
-for i in range(len(tester.slices)):
-    print('Anzahl der erzeugten Photonen ist: ', tester.slices[i].created_photons)
-    print('Anzahl der übrigbleibenden Axionen ist: ',tester.slices[i].remaining_axions)
+    def calc_transmission(self,I_0_in):
+        I_0_out = intensity_decay(I_0_in,self.width,self.attenuation_coefficient)
+
+        if self.next_object is not None:
+            return self.next_object.calc_transmission(I_0_out)
+        else:
+            return I_0_out
+
+
+
+
+x = np.arange(1300,100000,1000)
+y = []
+for i in range(len(x)):
+    tester = IAXO_config(7.5,10,x[i],300,511,1,1)
+    tester.calculate_axion_conversion(10000)
+    y.append(tester.get_final_intensity())
+
+print(y)
+
+fig1 = plt.figure(figsize=(12,8), dpi=80)
+ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
+#ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
+ax1.plot(x,y)
+ax1.set_xlabel('Schwelle des Z12 Diskriminators')
+ax1.set_ylabel('Anzahl der Koinzidenten Ereignisse')
+#plt.savefig('pics/Schwellenkurve.png')
+plt.show()
+
+
+# for i in range(len(tester.slices)):
+#     print('Anzahl der erzeugten Photonen ist: ', tester.slices[i].created_photons)
+#     print('Anzahl der übrigbleibenden Axionen ist: ',tester.slices[i].remaining_axions)
 
