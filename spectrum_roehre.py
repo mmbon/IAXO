@@ -16,30 +16,35 @@ import scipy.stats as stat
 from uncertainties import ufloat
 from uncertainties.umath import *
 from matplotlib import rc
+from numba import njit
+from numba.experimental import jitclass
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
 
 kappa = 1.67
 M = 4.002602
 
-
+@njit
 def calc_height(angle, length): #angle in degree
     return np.sin(math.radians(angle)) * length
 
-
+@njit
 def barometric_formula(height_diff, temp,density_h0):
     return density_h0 * (1 - (kappa-1)/kappa * (M * con.g * height_diff)/(con.R*temp))**((kappa-1)/kappa)
 
-
+@njit
 def reverse_barometric_formula(height_diff, temp,density_h1):
     return density_h1 * (1 - (kappa-1)/kappa * (M * con.g * height_diff)/(con.R*temp))**(-(kappa-1)/kappa)
 
+@njit
 def attnuation_coeff(energy):
     return -1.5832+5.9195 * np.exp(-0.353808 * energy)+4.03598 * np.exp(-0.970557 * energy)
 
+@njit
 def conversion_probability(gamma,L,gay,B):
     return ((gay*B)/2)**2 * 1/(gamma**2/4) * (1+np.exp(- gamma * L)-2*np.exp(-(gamma * L)/2) )
 
+@njit
 def intensity_decay(I_0,distance,attenuation): #100 is used to convert from cm to m
     return I_0 * np.exp(-attenuation  * distance)
 
@@ -141,21 +146,32 @@ class area_of_IAXO:
             return I_0_out
 
 
-
-
-x = np.arange(1300,100000,1000)
-y = []
+x = np.arange(0.1,20,0.05)
+y1 = []
+y2 = []
+y3 = []
 for i in range(len(x)):
-    tester = IAXO_config(7.5,10,x[i],300,511,1,1)
-    tester.calculate_axion_conversion(10000)
-    y.append(tester.get_final_intensity())
+    tester1 = IAXO_config(7.5,0,100000,300,x[i],1,1)
+    tester1.calculate_axion_conversion(10000)
+    y1.append(tester1.get_final_intensity())
+    tester2 = IAXO_config(7.5,10,100000,300,x[i],1,1)
+    tester2.calculate_axion_conversion(10000)
+    y2.append(tester2.get_final_intensity())
+    tester3 = IAXO_config(7.5,25,100000,300,x[i],1,1)
+    tester3.calculate_axion_conversion(10000)
+    y3.append(tester3.get_final_intensity())
 
-print(y)
+#Save data
+data_output_array = np.array((np.array(x),np.array(y1),np.array(y2),np.array(y3)))
+data_output = np.transpose(data_output_array)
+np.savetxt('winkelvergleich.txt',data_output,fmt='%6.2f',delimiter=',')
 
 fig1 = plt.figure(figsize=(12,8), dpi=80)
 ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
 #ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
-ax1.plot(x,y)
+ax1.plot(x,y1,color='blue')
+ax1.plot(x,y2,color='red')
+ax1.plot(x,y3,color='lime')
 ax1.set_xlabel('Schwelle des Z12 Diskriminators')
 ax1.set_ylabel('Anzahl der Koinzidenten Ereignisse')
 #plt.savefig('pics/Schwellenkurve.png')
