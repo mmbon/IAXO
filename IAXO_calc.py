@@ -25,6 +25,9 @@ rc('text', usetex=True)
 # calcHeigth()
 # print("The time difference is :", timeit.default_timer() - starttime)
 
+kappa = 1.67
+M = 4.002602
+
 length = 7.5 # in meters
 precision = 10_000
 number_of_slices = length/precision
