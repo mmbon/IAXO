@@ -42,11 +42,12 @@ def attnuation_coeff(energy):
 
 @njit
 def conversion_probability(gamma,L,gay,B):
-    return ((gay*B)/2)**2 * 1/(gamma**2/4) * (1+np.exp(- gamma * L)-2*np.exp(-(gamma * L)/2) )
+    print(gamma,gay,B)
+    return ((gay*B)/2)**2 * 1/(gamma**2/4) * (1+np.exp(- gamma * L)-2*np.exp(-(gamma * L)/2))
 
 @njit
 def intensity_decay(I_0,distance,attenuation): #100 is used to convert from cm to m
-    return I_0 * np.exp(-attenuation  * distance)
+    return I_0 * np.exp(-attenuation * distance)
 
 class IAXO_config:
     def __init__(self, length, angle, pressure, temperature,energy,g_ay,B): #Length in m, angle in degrees, pressure in Pa, temp in K,energy in keV
@@ -161,24 +162,25 @@ for i in range(len(x)):
     tester3.calculate_axion_conversion(10000)
     y3.append(tester3.get_final_intensity())
 
-#Save data
-data_output_array = np.array((np.array(x),np.array(y1),np.array(y2),np.array(y3)))
-data_output = np.transpose(data_output_array)
-np.savetxt('winkelvergleich.txt',data_output,fmt='%6.2f',delimiter=',')
-
-fig1 = plt.figure(figsize=(12,8), dpi=80)
-ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
-#ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
-ax1.plot(x,y1,color='blue')
-ax1.plot(x,y2,color='red')
-ax1.plot(x,y3,color='lime')
-ax1.set_xlabel('Schwelle des Z12 Diskriminators')
-ax1.set_ylabel('Anzahl der Koinzidenten Ereignisse')
-#plt.savefig('pics/Schwellenkurve.png')
-plt.show()
+# #Save data
+# data_output_array = np.array((np.array(x),np.array(y1),np.array(y2),np.array(y3)))
+# data_output = np.transpose(data_output_array)
+# np.savetxt('winkelvergleich.txt',data_output,fmt='%6.2f',delimiter=',')
+#
+# fig1 = plt.figure(figsize=(12,8), dpi=80)
+# ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
+# #ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
+# ax1.plot(x,y1,color='blue')
+# ax1.plot(x,y2,color='red')
+# ax1.plot(x,y3,color='lime')
+# ax1.set_xlabel('Schwelle des Z12 Diskriminators')
+# ax1.set_ylabel('Anzahl der Koinzidenten Ereignisse')
+# #plt.savefig('pics/Schwellenkurve.png')
+# plt.show()
 
 
 # for i in range(len(tester.slices)):
 #     print('Anzahl der erzeugten Photonen ist: ', tester.slices[i].created_photons)
 #     print('Anzahl der übrigbleibenden Axionen ist: ',tester.slices[i].remaining_axions)
+
 
