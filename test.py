@@ -26,7 +26,7 @@ def conversion_probability(gamma,L,gay,B):
     return ((gay*B)/2)**2 * 1/(gamma**2/4) * (1+np.exp(- gamma * L)-2*np.exp(-(gamma * L)/2) )
 
 def wrapper_for_conversion(x):
-    return conversion_probability(11.04356,x,1,1)
+    return conversion_probability(7.06424619e+13,x,1,1)
 
 def test_slices(length, number_slices):
     step = length/number_slices
