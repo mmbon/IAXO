@@ -29,7 +29,7 @@ rc('text', usetex=True)
 kappa = 1.67
 M = 4.002602 #g/mol
 
-length = 5 # in meters
+length = 20 # in meters
 precision = 10
 step_length_diff = length/precision
 angle = 20 #angle in degree
@@ -67,8 +67,8 @@ def calcHeigth(angle): #calculates in m
         height[i] = hp*(length - (step_length_diff*(i+1)))
 
 
-def calcDensity(angle):
-    density[len(density)-1] = pressureToDensity(pressure_at_bottom)
+def calcDensity(angle,pressure):
+    density[len(density)-1] = pressureToDensity(pressure)
     height_diff = step_length_diff * np.sin(np.radians(angle))
 
     for i in reversed(range(len(density)-1)):
@@ -84,31 +84,37 @@ def calcGamma(eneg):
 def calcConvProbAxion(B):
     probability_creation[0] = conversion_probability(gammas[0],step_length_diff / 5067730.7,B) #Crude way to implement length in eV
     for i in range(1,len(probability_creation)):
-        probability_creation[i] = conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)
+        probability_creation[i] = (conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) * (1 - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) + \
+                                  (conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) * conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) - (conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)**2)
 
 
 def calcAbsorption():
-    for i in range(len(probability_creation)):
-        final_photons[i] = probability_creation[i]
-        for j in range(i+1,len(probability_creation)):
-            final_photons[i] = final_photons[i] * np.exp(- gammas[j] * step_length_diff / 5067730.7)
 
-# calcHeigth()
-# calcDensity()
-# calcGamma()
-# calcConvProbAxion()
+    for i in range(len(probability_creation)):
+        hp = 1
+        for j in range(i+1,len(probability_creation)):
+            hp *= np.exp(- gammas[j] * step_length_diff / 5067730.7)
+
+        final_photons[i] = hp * probability_creation[i]
+
+# calcHeigth(0)
+# calcDensity(0)
+# calcGamma(5)
+# calcConvProbAxion(B)
 # calcAbsorption()
 
-save_array = np.eye(5, len(np.arange(0.001,5,0.001)))
+save_array = np.eye(3, len(np.arange(0.001,5,0.001)))
 print(save_array)
 x = np.arange(0.001,5,0.001)
 
-for j in range(5):
+calcHeigth(10)
+
+for j in range(3):
     for i in range(len(x)):
-        calcHeigth(0)
-        calcDensity(0)
+
+        calcDensity(10,(j+1)*100_000)
         calcGamma(x[i])
-        calcConvProbAxion(j * 195.35277)
+        calcConvProbAxion(1 * 195.35277)
         calcAbsorption()
 
         save_array[j][i] = np.sum(final_photons)
@@ -117,11 +123,9 @@ for j in range(5):
 fig1 = plt.figure(figsize=(12,8), dpi=80)
 ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
 #ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
-ax1.plot(x,save_array[0],color='red',label='Magnetfeld: 0 T')
-ax1.plot(x,save_array[1],color='cyan',label='Magnetfeld: 1 T')
-ax1.plot(x,save_array[2],color='blue',label='Magnetfeld: 2 T')
-ax1.plot(x,save_array[3],color='lime',label='Magnetfeld: 3 T')
-ax1.plot(x,save_array[4],color='black',label='Magnetfeld: 4 T')
+ax1.plot(x,save_array[0],color='red',label='Druck: 1 Bar')
+ax1.plot(x,save_array[1],color='cyan',label='Winkel: 2 Bar')
+ax1.plot(x,save_array[2],color='blue',label='Winkel: 3 Bar')
 ax1.set_xlabel('Energie in keV')
 ax1.set_ylabel('Wahrscheinlichkeit einer Photonenmessung')
 ax1.legend(loc='upper left')
