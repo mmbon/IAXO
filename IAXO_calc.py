@@ -42,7 +42,8 @@ B = 1 * 195.35277 # eV^2
 height = np.zeros(precision)
 density = np.zeros(precision)
 gammas = np.zeros(precision)
-probability_creation = np.zeros(precision)
+probability_in_interval = np.zeros(precision)
+photon_creation_probability = np.zeros(precision)
 final_photons = np.zeros(precision)
 
 @njit
@@ -82,52 +83,66 @@ def calcGamma(eneg):
 
 
 def calcConvProbAxion(B):
-    probability_creation[0] = conversion_probability(gammas[0],step_length_diff / 5067730.7,B) #Crude way to implement length in eV
-    for i in range(1,len(probability_creation)):
-        probability_creation[i] = (conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) * (1 - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) + \
-                                  (conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) * conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)) - (conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B)**2)
+    probability_in_interval[0] = conversion_probability(gammas[0],step_length_diff / 5067730.7,B) #Crude way to implement length in eV
+    photon_creation_probability[0] = probability_in_interval[0]
 
+    hp = 0
 
-def calcAbsorption():
+    for i in range(1,len(probability_in_interval)):
+        probability_in_interval[i] = (conversion_probability(gammas[i],(i+1)*step_length_diff / 5067730.7,B) - conversion_probability(gammas[i-1],i * step_length_diff / 5067730.7,B))
 
-    for i in range(len(probability_creation)):
-        hp = 1
-        for j in range(i+1,len(probability_creation)):
-            hp *= np.exp(- gammas[j] * step_length_diff / 5067730.7)
+        for j in range(0,i):
+            print(i,j)
+            hp *= (1-probability_in_interval[j])
 
-        final_photons[i] = hp * probability_creation[i]
+        photon_creation_probability[i] = hp * probability_in_interval[i]
 
-# calcHeigth(0)
-# calcDensity(0)
-# calcGamma(5)
-# calcConvProbAxion(B)
+# def calcAbsorption():
+#
+#     for i in range(len(probability_creation)):
+#         hp = 1
+#         for j in range(i+1,len(probability_creation)):
+#             hp *= np.exp(- gammas[j] * step_length_diff / 5067730.7)
+#
+#         final_photons[i] = hp * probability_creation[i]
+
+calcHeigth(0)
+calcDensity(0,100_000)
+calcGamma(5)
+calcConvProbAxion(1)
+
+print(gammas[0])
+print(density[0])
+
+#print(conversion_probability(gammas[0],20,1))
+#print(sum(photon_creation_probability))
 # calcAbsorption()
 
-save_array = np.eye(3, len(np.arange(0.001,5,0.001)))
-print(save_array)
-x = np.arange(0.001,5,0.001)
-
-calcHeigth(10)
-
-for j in range(3):
-    for i in range(len(x)):
-
-        calcDensity(10,(j+1)*100_000)
-        calcGamma(x[i])
-        calcConvProbAxion(1 * 195.35277)
-        calcAbsorption()
-
-        save_array[j][i] = np.sum(final_photons)
-
-
-fig1 = plt.figure(figsize=(12,8), dpi=80)
-ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
-#ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
-ax1.plot(x,save_array[0],color='red',label='Druck: 1 Bar')
-ax1.plot(x,save_array[1],color='cyan',label='Winkel: 2 Bar')
-ax1.plot(x,save_array[2],color='blue',label='Winkel: 3 Bar')
-ax1.set_xlabel('Energie in keV')
-ax1.set_ylabel('Wahrscheinlichkeit einer Photonenmessung')
-ax1.legend(loc='upper left')
-#plt.savefig('pics/Schwellenkurve.png')
-plt.show()
+# save_array = np.eye(3, len(np.arange(0.001,5,0.001)))
+# print(save_array)
+# x = np.arange(0.001,5,0.001)
+#
+# calcHeigth(10)
+#
+# for j in range(3):
+#     for i in range(len(x)):
+#
+#         calcDensity(10,(j+1)*100_000)
+#         calcGamma(x[i])
+#         calcConvProbAxion(1 * 195.35277)
+#         calcAbsorption()
+#
+#         save_array[j][i] = np.sum(final_photons)
+#
+#
+# fig1 = plt.figure(figsize=(12,8), dpi=80)
+# ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
+# #ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
+# ax1.plot(x,save_array[0],color='red',label='Druck: 1 Bar')
+# ax1.plot(x,save_array[1],color='cyan',label='Winkel: 2 Bar')
+# ax1.plot(x,save_array[2],color='blue',label='Winkel: 3 Bar')
+# ax1.set_xlabel('Energie in keV')
+# ax1.set_ylabel('Wahrscheinlichkeit einer Photonenmessung')
+# ax1.legend(loc='upper left')
+# #plt.savefig('pics/Schwellenkurve.png')
+# plt.show()
