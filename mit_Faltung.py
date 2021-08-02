@@ -35,7 +35,7 @@ energy_window = np.loadtxt("polypropylene_window_10micron.txt", skiprows=2,delim
 transmission_coefficient_window = np.loadtxt("polypropylene_window_10micron.txt", skiprows=2,delimiter=',', usecols=1) #Transmission
 
 energy_flux = np.loadtxt("axion_gae_flux.txt", skiprows=10,delimiter=',', usecols=0) #Energie in keV
-flux_per_keV = np.loadtxt("axion_gae_flux.txt", skiprows=10,delimiter=',', usecols=1) #Flux 1/(10^19,keV*cm^2*day)
+flux_per_keV = np.loadtxt("axion_gae_flux.txt", skiprows=10,delimiter=',', usecols=1) * 10**19 #Flux 1/(10^19,keV*cm^2*day)
 
 @njit
 def pressureToDensity(pressure): #enter Pa
@@ -223,23 +223,23 @@ def create_Data_array(variable,init_data):
     return hp
 
 
-# total_expected_photons = integrate.quad(final_number_of_photons,0,10.0,(1,0,20,100_000))
-# print(total_expected_photons)
+total_expected_photons = integrate.quad(final_number_of_photons,0,10.0,(1,0,20,100_000), limit=1000)
+print(total_expected_photons)
 
-plottable_list = create_Data_array("Angle",[0,15,35])
-
-fig1 = plt.figure(figsize=(12,8), dpi=80)
-ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
-colour_list = ['r','k','g','b','m','y','c']
-label_list = ['0 Grad','15 Grad','35 Grad']
-# label_list = ['1 Tesla','2 Tesla','3 Tesla']
-# label_list = ['50 kPa','100 kPa','200 kPa']
-#ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
-for i in range(len(plottable_list)):
-    ax1.plot(x_array,plottable_list[i],color=colour_list[i],label=label_list[i])
-
-ax1.set_xlabel('Energie in keV')
-ax1.set_ylabel('Detektierte Photonen')
-ax1.legend(loc='upper right')
-# plt.savefig('pics/Schwellenkurve.png')
-plt.show()
+# plottable_list = create_Data_array("Angle",[0,15,35])
+#
+# fig1 = plt.figure(figsize=(12,8), dpi=80)
+# ax1 = fig1.add_axes([0.15,0.15,0.8,0.8])
+# colour_list = ['r','k','g','b','m','y','c']
+# label_list = ['0 Grad','15 Grad','35 Grad']
+# # label_list = ['1 Tesla','2 Tesla','3 Tesla']
+# # label_list = ['50 kPa','100 kPa','200 kPa']
+# #ax1.errorbar(x_disc_schwelle[1:],y_count_coincidence[1:],yerr=np.sqrt(y_count_coincidence[1:]), ls='none', capsize=2,elinewidth=0.5, capthick=0.5, color='k',label='Koinzidenz')
+# for i in range(len(plottable_list)):
+#     ax1.plot(x_array,plottable_list[i],color=colour_list[i],label=label_list[i])
+#
+# ax1.set_xlabel('Energie in keV')
+# ax1.set_ylabel('Detektierte Photonen')
+# ax1.legend(loc='upper right')
+# # plt.savefig('pics/Schwellenkurve.png')
+# plt.show()
